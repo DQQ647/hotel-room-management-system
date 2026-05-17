@@ -1,0 +1,28 @@
+# Local database/runtime config
+backend/db_config.json
+backend/hotel.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local environment
+.env
+.venv/
+venv/
+
+# Generated coursework documents and slides
+*.doc
+*.docx
+*.ppt
+*.pptx
+outputs/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

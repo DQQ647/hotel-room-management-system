@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>酒店客房管理系统</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <section id="loginView" class="login-view">
+      <div class="login-orbit" aria-hidden="true"></div>
+      <div class="login-hero">
+        <div class="login-brandline">
+          <img src="./assets/hotel-mark.svg" alt="" />
+          <div>
+            <strong>云栖酒店</strong>
+            <span>Hotel Operations Suite</span>
+          </div>
+        </div>
+        <div class="hero-copy">
+          <p class="eyebrow">Enterprise Room Management</p>
+          <h1>酒店客房管理系统</h1>
+          <p>面向前台、客房部与财务的一体化运营工作台。</p>
+        </div>
+        <div class="login-metrics" aria-label="系统指标">
+          <div><strong>24h</strong><span>房态同步</span></div>
+          <div><strong>8+</strong><span>核心模块</span></div>
+          <div><strong>3NF</strong><span>数据库设计</span></div>
+        </div>
+        <div class="hutao-stage" aria-hidden="true">
+          <div class="moon-gate hutao-gate">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="spirit-flame flame-one"></div>
+          <div class="spirit-flame flame-two"></div>
+          <div class="spirit-flame flame-three"></div>
+          <img class="hutao-portrait" src="./assets/hutao-official.jpg" alt="" />
+          <div class="hutao-paper paper-one"></div>
+          <div class="hutao-paper paper-two"></div>
+          <div class="anime-shadow hutao-shadow"></div>
+        </div>
+      </div>
+      <form id="loginForm" class="login-card">
+        <div class="card-head">
+          <p class="eyebrow">Secure Access</p>
+          <h2>欢迎登录</h2>
+          <span>请输入账号进入系统</span>
+        </div>
+        <label>
+          用户名
+          <input name="username" autocomplete="username" value="admin" required />
+        </label>
+        <label>
+          密码
+          <input name="password" type="password" autocomplete="current-password" value="admin123" required />
+        </label>
+        <button class="primary-btn login-submit" type="submit">登录系统</button>
+        <div class="demo-accounts">
+          <button type="button" data-account="admin:admin123">管理员</button>
+          <button type="button" data-account="front:front123">前台</button>
+          <button type="button" data-account="house:house123">客房部</button>
+          <button type="button" data-account="finance:finance123">财务</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="appView" class="app-shell is-hidden">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="./assets/hotel-mark.svg" alt="" />
+          <div>
+            <strong>云栖酒店</strong>
+            <span>客房运营台</span>
+          </div>
+        </div>
+        <nav class="nav-list" aria-label="主导航">
+          <button class="nav-item active" data-view="dashboard"><span>⌁</span>总览</button>
+          <button class="nav-item" data-view="rooms"><span>□</span>客房</button>
+          <button class="nav-item" data-view="reservations"><span>◷</span>预订</button>
+          <button class="nav-item" data-view="checkins"><span>+</span>入住</button>
+          <button class="nav-item" data-view="stays"><span>¥</span>结算</button>
+          <button class="nav-item" data-view="customers"><span>◎</span>客户</button>
+          <button class="nav-item" data-view="reports"><span>≋</span>报表</button>
+          <button class="nav-item" data-view="audit"><span>≡</span>审计</button>
+        </nav>
+        <div class="sidebar-footer">
+          <div>
+            <strong id="userName">-</strong>
+            <span id="userRole">-</span>
+          </div>
+          <button id="logoutBtn" class="ghost-btn" type="button">退出</button>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="pageEyebrow">今日运营</p>
+            <h2 id="pageTitle">总览</h2>
+          </div>
+          <div class="top-actions">
+            <button id="refreshBtn" class="secondary-btn" type="button">刷新</button>
+          </div>
+        </header>
+        <section id="content" class="content"></section>
+      </main>
+    </section>
+
+    <div id="modal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true">
+      <div class="modal-panel">
+        <button id="modalClose" class="icon-btn modal-close" type="button" aria-label="关闭">×</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast is-hidden"></div>
+    <script src="./assets/app.js"></script>
+  </body>
+</html>
