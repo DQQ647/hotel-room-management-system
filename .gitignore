@@ -20,6 +20,8 @@ venv/
 *.ppt
 *.pptx
 outputs/
+*.mp4
+*.log
 
 # OS/editor noise
 .DS_Store

@@ -42,6 +42,7 @@ PHONE_RE = re.compile(r"^(?:1[3-9]\d{9}|0\d{2,3}-?\d{7,8})$")
 ID_CARD_WEIGHTS = (7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2)
 ID_CARD_CHECK_CODES = "10X98765432"
 CUSTOMER_SOURCES = {"walk_in", "member", "ota", "company", "travel_agency", "other"}
+ROOM_STATUSES = {"free", "occupied", "maintenance", "reserved"}
 TOKENS: dict[str, dict] = {}
 
 
@@ -275,6 +276,54 @@ def validate_customer_data(data: dict) -> dict:
         "phone": validate_phone(data["phone"]),
         "source": source,
         "notes": notes,
+    }
+
+
+def validate_room_data(data: dict, existing: dict | None = None) -> dict:
+    required(data, "room_number", "floor", "room_type", "price")
+
+    room_number = str(data.get("room_number") or "").strip()
+    if not room_number:
+        raise ApiError(400, "房号不能为空")
+    if len(room_number) > 20:
+        raise ApiError(400, "房号不能超过20个字符")
+
+    room_type = str(data.get("room_type") or "").strip()
+    if not room_type:
+        raise ApiError(400, "房型不能为空")
+    if len(room_type) > 80:
+        raise ApiError(400, "房型不能超过80个字符")
+
+    try:
+        floor = int(data.get("floor"))
+    except (TypeError, ValueError) as exc:
+        raise ApiError(400, "楼层必须是数字") from exc
+    if floor < 1 or floor > 99:
+        raise ApiError(400, "楼层必须在1到99之间")
+
+    try:
+        bed_count = int(data.get("bed_count") or (existing or {}).get("bed_count") or 1)
+    except (TypeError, ValueError) as exc:
+        raise ApiError(400, "床位数必须是数字") from exc
+    if bed_count < 1 or bed_count > 6:
+        raise ApiError(400, "床位数必须在1到6之间")
+
+    status = data.get("status") or (existing or {}).get("status") or "free"
+    if status not in ROOM_STATUSES:
+        raise ApiError(400, "房态不在允许范围内")
+
+    description = str(data.get("description", (existing or {}).get("description") or "") or "").strip()
+    if len(description) > 255:
+        raise ApiError(400, "描述不能超过255个字符")
+
+    return {
+        "room_number": room_number,
+        "floor": floor,
+        "room_type": room_type,
+        "bed_count": bed_count,
+        "price": money(data.get("price"), "房价", 1),
+        "status": status,
+        "description": description,
     }
 
 
@@ -780,9 +829,9 @@ class HotelHandler(BaseHTTPRequestHandler):
             return
 
         if self.command == "POST" and len(parts) == 2:
-            self.require_role(user, {"housekeeping"})
+            self.require_role(user, {"frontdesk", "housekeeping"})
             data = self.read_json()
-            required(data, "room_number", "floor", "room_type", "price")
+            room_data = validate_room_data(data)
             with connect() as conn:
                 cursor = conn.execute(
                     """
@@ -790,29 +839,30 @@ class HotelHandler(BaseHTTPRequestHandler):
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
-                        str(data["room_number"]).strip(),
-                        int(data["floor"]),
-                        str(data["room_type"]).strip(),
-                        int(data.get("bed_count") or 1),
-                        money(data["price"], "房价", 1),
-                        data.get("status") or "free",
-                        data.get("description") or "",
+                        room_data["room_number"],
+                        room_data["floor"],
+                        room_data["room_type"],
+                        room_data["bed_count"],
+                        room_data["price"],
+                        room_data["status"],
+                        room_data["description"],
                     ),
                 )
-                log_action(conn, "create", "room", cursor.lastrowid, f"新增房间 {data['room_number']}", user["id"])
+                log_action(conn, "create", "room", cursor.lastrowid, f"新增房间 {room_data['room_number']}", user["id"])
                 self.send_json(201, {"id": cursor.lastrowid})
             return
 
         if len(parts) == 3 and parts[2].isdigit():
             room_id = int(parts[2])
             if self.command == "PUT":
-                self.require_role(user, {"housekeeping"})
+                self.require_role(user, {"frontdesk", "housekeeping"})
                 data = self.read_json()
                 with connect() as conn:
                     room = fetch_one(conn, "SELECT * FROM rooms WHERE id = ?", (room_id,))
                     if not room:
                         raise ApiError(404, "房间不存在")
-                    new_status = data.get("status", room["status"])
+                    room_data = validate_room_data({**room, **data}, room)
+                    new_status = room_data["status"]
                     if new_status == "maintenance":
                         if fetch_one(conn, "SELECT id FROM stays WHERE room_id = ? AND status = 'active'", (room_id,)):
                             raise ApiError(409, "当前房间仍有住客，不能设为维修。")
@@ -830,13 +880,13 @@ class HotelHandler(BaseHTTPRequestHandler):
                         WHERE id = ?
                         """,
                         (
-                            str(data.get("room_number", room["room_number"])).strip(),
-                            int(data.get("floor", room["floor"])),
-                            str(data.get("room_type", room["room_type"])).strip(),
-                            int(data.get("bed_count", room["bed_count"])),
-                            money(data.get("price", room["price"]), "房价", 1),
+                            room_data["room_number"],
+                            room_data["floor"],
+                            room_data["room_type"],
+                            room_data["bed_count"],
+                            room_data["price"],
                             new_status,
-                            data.get("description", room["description"] or ""),
+                            room_data["description"],
                             room_id,
                         ),
                     )

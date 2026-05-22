@@ -433,6 +433,7 @@ async function handleActionClick(event) {
   try {
     if (action === "open-room-modal") openRoomModal();
     if (action === "edit-room") openRoomModal(state.rooms.find((room) => String(room.id) === button.dataset.id));
+    if (action === "save-room") await saveRoom(button.closest("form"));
     if (action === "set-room-status") await setRoomStatus(button.dataset.id, button.dataset.status);
     if (action === "cancel-reservation") await cancelReservation(button.dataset.id);
     if (action === "reservation-checkin") await checkinFromReservation(button.dataset.id);
@@ -488,17 +489,26 @@ async function handleFormSubmit(event) {
 }
 
 async function saveRoom(form) {
-  const data = serialize(form);
+  const submitButton = form.querySelector('[data-action="save-room"], button[type="submit"]');
+  const data = normalizeRoomPayload(serialize(form));
   const id = data.id;
   delete data.id;
-  data.floor = Number(data.floor);
-  data.bed_count = Number(data.bed_count || 1);
-  data.price = Number(data.price);
-  if (id) await api(`/api/rooms/${id}`, { method: "PUT", body: data });
-  else await api("/api/rooms", { method: "POST", body: data });
-  closeModal();
-  await renderRooms();
-  toast("客房信息已保存");
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "保存中...";
+  }
+  try {
+    if (id) await api(`/api/rooms/${id}`, { method: "PUT", body: data });
+    else await api("/api/rooms", { method: "POST", body: data });
+    closeModal();
+    await renderRooms();
+    toast("客房信息已保存");
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = "保存";
+    }
+  }
 }
 
 async function saveCustomer(form) {
@@ -622,7 +632,7 @@ function openRoomModal(room = {}) {
       <label class="full">描述<textarea name="description">${escapeHtml(room.description || "")}</textarea></label>
       <div class="form-actions">
         <button class="secondary-btn" type="button" onclick="document.querySelector('#modalClose').click()">取消</button>
-        <button class="primary-btn" type="submit">保存</button>
+        <button class="primary-btn" data-action="save-room" type="button">保存</button>
       </div>
     </form>
   `);
@@ -952,6 +962,40 @@ function customerPayload(data) {
     id_card: normalizeIdCard(data.id_card),
     source: data.source || "walk_in",
     notes: (data.notes || "").trim(),
+  };
+}
+
+function normalizeRoomPayload(data) {
+  const roomNumber = String(data.room_number || "").trim();
+  if (!roomNumber) throw new Error("请填写房号");
+
+  const roomType = String(data.room_type || "").trim();
+  if (!roomType) throw new Error("请填写房型");
+
+  const floor = Number(data.floor);
+  if (!Number.isInteger(floor) || floor < 1 || floor > 99) {
+    throw new Error("楼层必须是1到99之间的整数");
+  }
+
+  const bedCount = Number(data.bed_count || 1);
+  if (!Number.isInteger(bedCount) || bedCount < 1 || bedCount > 6) {
+    throw new Error("床位数必须是1到6之间的整数");
+  }
+
+  const price = Number(data.price);
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new Error("房价必须大于0");
+  }
+
+  return {
+    ...data,
+    room_number: roomNumber,
+    room_type: roomType,
+    floor,
+    bed_count: bedCount,
+    price,
+    status: data.status || "free",
+    description: String(data.description || "").trim(),
   };
 }
 
