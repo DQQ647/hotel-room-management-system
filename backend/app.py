@@ -13,6 +13,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
 import pymysql
@@ -181,15 +182,15 @@ def safe_print(message: str) -> None:
         pass
 
 
-def as_dict(row: sqlite3.Row | None) -> dict | None:
+def as_dict(row: Any | None) -> dict | None:
     return dict(row) if row else None
 
 
-def fetch_all(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> list[dict]:
+def fetch_all(conn: Any, sql: str, params: tuple = ()) -> list[dict]:
     return [dict(row) for row in conn.execute(sql, params).fetchall()]
 
 
-def fetch_one(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> dict | None:
+def fetch_one(conn: Any, sql: str, params: tuple = ()) -> dict | None:
     return as_dict(conn.execute(sql, params).fetchone())
 
 
@@ -298,7 +299,7 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(candidate, digest)
 
 
-def seed_data(conn: sqlite3.Connection) -> None:
+def seed_data(conn: Any) -> None:
     if conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] > 0:
         return
 
@@ -448,14 +449,14 @@ def init_db() -> None:
         seed_data(conn)
 
 
-def log_action(conn: sqlite3.Connection, action: str, entity: str, entity_id: int | None, detail: str, user_id: int | None) -> None:
+def log_action(conn: Any, action: str, entity: str, entity_id: int | None, detail: str, user_id: int | None) -> None:
     conn.execute(
         "INSERT INTO audit_logs(action, entity, entity_id, detail, actor_id) VALUES (?, ?, ?, ?, ?)",
         (action, entity, entity_id, detail, user_id),
     )
 
 
-def update_room_status(conn: sqlite3.Connection, room_id: int) -> None:
+def update_room_status(conn: Any, room_id: int) -> None:
     room = fetch_one(conn, "SELECT status FROM rooms WHERE id = ?", (room_id,))
     if not room:
         return
@@ -480,7 +481,7 @@ def update_room_status(conn: sqlite3.Connection, room_id: int) -> None:
     conn.execute("UPDATE rooms SET status = ?, updated_at = datetime('now', 'localtime') WHERE id = ?", (status, room_id))
 
 
-def api_error_from_sqlite(exc: Exception) -> ApiError:
+def api_error_from_database(exc: Exception) -> ApiError:
     text = str(exc)
     mapping = {
         "ROOM_IN_MAINTENANCE": "该房间正在维修，不能预订或入住。",
@@ -501,7 +502,7 @@ def api_error_from_sqlite(exc: Exception) -> ApiError:
     return ApiError(500, "数据库操作失败：" + text)
 
 
-def create_or_update_customer(conn: sqlite3.Connection, data: dict, user_id: int | None) -> int:
+def create_or_update_customer(conn: Any, data: dict, user_id: int | None) -> int:
     customer = validate_customer_data(data)
     existing = fetch_one(conn, "SELECT id FROM customers WHERE id_card = ?", (customer["id_card"],))
     if existing:
@@ -605,7 +606,7 @@ class HotelHandler(BaseHTTPRequestHandler):
         except ApiError as exc:
             self.send_json(exc.status, {"error": exc.message})
         except (sqlite3.Error, pymysql.MySQLError) as exc:
-            api_error = api_error_from_sqlite(exc)
+            api_error = api_error_from_database(exc)
             self.send_json(api_error.status, {"error": api_error.message})
         except json.JSONDecodeError:
             self.send_json(400, {"error": "请求体必须是合法 JSON"})

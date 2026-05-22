@@ -36,9 +36,7 @@ hotel-room-management-system
 │     ├─ styles.css
 │     ├─ hotel-mark.svg
 │     └─ hutao-official.jpg
-├─ requirements.txt
-├─ start_backend.bat
-└─ open_frontend.bat
+└─ requirements.txt
 ```
 
 ## 数据库说明
