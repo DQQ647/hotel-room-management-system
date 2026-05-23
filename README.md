@@ -37,8 +37,7 @@ hotel-room-management-system
 │     ├─ hotel-mark.svg
 │     └─ hutao-official.jpg
 ├─ requirements.txt
-├─ 酒店客房管理系统_项目文档.docx
-└─ 酒店客房管理系统答辩PPT.pptx
+└─ 酒店客房管理系统_项目文档.docx
 ```
 
 ## 数据库说明
@@ -111,5 +110,3 @@ http://127.0.0.1:8000
 ## 说明
 
 `backend/db_config.json` 是本地数据库配置文件，已被 `.gitignore` 忽略，不会上传到 GitHub。
-
-答辩 PPT 已包含功能演示视频页，可在 PowerPoint 中直接播放。单独录制的 `.mp4` 文件属于本地素材，已被 `.gitignore` 忽略，不随代码仓库上传。
