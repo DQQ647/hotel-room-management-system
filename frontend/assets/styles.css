@@ -1420,7 +1420,6 @@ textarea:focus {
   }
 }
 
-/* Premium hospitality theme */
 html,
 body {
   background:
@@ -1725,7 +1724,6 @@ textarea:focus {
   }
 }
 
-/* Plum blossom anime theme */
 :root {
   --bg: #f8f1ea;
   --surface: #fffaf5;
@@ -2568,7 +2566,6 @@ textarea:focus {
   }
 }
 
-/* Final login cover using the user-provided Hu Tao artwork. */
 .login-view {
   grid-template-columns: minmax(620px, 1fr) minmax(360px, 430px);
   gap: clamp(24px, 3.4vw, 48px);

@@ -156,8 +156,6 @@ def translate_sql(sql: str) -> str:
         return "START TRANSACTION"
     sql = sql.replace("datetime('now', 'localtime')", "NOW()")
     sql = sql.replace("date('now', 'localtime')", "CURDATE()")
-    # PyMySQL uses Python's percent formatter internally, so literal MySQL
-    # DATE_FORMAT percent tokens must be escaped as %% before execute().
     sql = sql.replace("strftime('%Y-%m', 'now', 'localtime')", "DATE_FORMAT(NOW(), '%%Y-%%m')")
     sql = sql.replace("strftime('%Y-%m', paid_at)", "DATE_FORMAT(paid_at, '%%Y-%%m')")
     return sql.replace("?", "%s")
